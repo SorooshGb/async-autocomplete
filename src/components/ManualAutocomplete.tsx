@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, CircularProgress, Divider, Stack, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Divider, Stack, Typography } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import { debounce } from '@mui/material/utils';
@@ -132,6 +132,16 @@ export function ManualAutocomplete() {
     }
   }
 
+  const retryFirstPage = () => {
+    startRequest({ replaceOptions: true, resetPages: true });
+    fetchMoviesPage(inputValue, 1);
+  };
+
+  const retryNextPage = () => {
+    startRequest();
+    fetchMoviesPage(inputValue, pageRef.current);
+  };
+
   // Cleanup
   useEffect(() => () => debouncedFetchMovies.clear(), [debouncedFetchMovies]);
   useEffect(() => () => debouncedFetchNextPageOnScroll.clear(), [debouncedFetchNextPageOnScroll]);
@@ -149,11 +159,11 @@ export function ManualAutocomplete() {
         onOpen={onDropdownOpen}
         inputValue={inputValue}
         onInputChange={(_, v) => onInputChange(v)}
-        noOptionsText={<NoOptionsText />}
+        noOptionsText={getNoOptionsText(error, retryFirstPage)}
         loadingText={<AutocompleteLoadingText />}
         ListboxProps={{ onScroll: handleListboxScroll, style: { direction: 'ltr', overscrollBehavior: 'contain' } }}
-        renderInput={params => <TextField {...params} label="فیلم‌ها" error={!!error} helperText={error} />}
-        renderOption={makeRenderOption(options, hasMorePages)}
+        renderInput={params => <TextField {...params} label="فیلم‌ها" error={!!error} />}
+        renderOption={makeRenderOption(options, hasMorePages, !!error, retryNextPage)}
       />
       <Divider />
       <ManualAutocompleteExplanation />
@@ -169,30 +179,55 @@ function AutocompleteLoadingText() {
   );
 }
 
-function NoOptionsText() {
-  return <Typography>هیچ نتیجه‌ای یافت نشد</Typography>;
+function getNoOptionsText(error: string, retry: () => void) {
+  return error ? (
+    <Button onClick={retry} size="small" color="error">
+      {error}. برای تلاش مجدد کلیک کنید
+    </Button>
+  ) : (
+    <Typography>هیچ نتیجه‌ای یافت نشد</Typography>
+  );
 }
 
-function makeRenderOption(options: MoviesOption[], hasNextPage: boolean) {
+function makeRenderOption(
+  options: MoviesOption[],
+  hasNextPage: boolean,
+  isPaginationError: boolean,
+  retryNextPage: () => void
+) {
   return (props: React.HTMLAttributes<HTMLLIElement> & { key: string }, option: MoviesOption) => {
     const isLast = option === options[options.length - 1];
 
-    if (isLast && hasNextPage) {
-      const { key, ...rest } = props;
+    if (!isLast) {
       return (
-        <Fragment key={key}>
-          <li {...rest}>{option.label}</li>
-          <Box marginTop={1} display="flex" justifyContent="center">
-            <CircularProgress size={20} />
-          </Box>
-        </Fragment>
+        <li {...props} key={option.id}>
+          {option.label}
+        </li>
       );
     }
 
+    if (!hasNextPage && !isPaginationError) {
+      return (
+        <li {...props} key={option.id}>
+          {option.label}
+        </li>
+      );
+    }
+
+    const { key, ...rest } = props;
     return (
-      <li {...props} key={option.id}>
-        {option.label}
-      </li>
+      <Fragment key={key}>
+        <li {...rest}>{option.label}</li>
+        <Box marginTop={1} display="flex" justifyContent="center" sx={{ height: 30 }}>
+          {isPaginationError ? (
+            <Button color="error" size="small" onClick={retryNextPage}>
+              خطا در بارگذاری، برای تلاش مجدد کلیک کنید
+            </Button>
+          ) : (
+            hasNextPage && <CircularProgress size={20} />
+          )}
+        </Box>
+      </Fragment>
     );
   };
 }

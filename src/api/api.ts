@@ -34,6 +34,8 @@ export async function fetchMovies({
       { signal: abortSignal }
     );
 
+    // throw new Error('پاسخ نامعتبر از سمت سرور');
+
     if (!res.ok) {
       return { error: true, message: getError(res.status) };
     }
