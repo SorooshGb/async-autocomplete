@@ -8,50 +8,56 @@ export function ManualAutocompleteExplanation() {
       </Typography>
 
       <Typography variant="body2" color="text.secondary" gutterBottom>
-        این کامپوننت یک Autocomplete با جستجوی لحظه‌ای و اسکرول بینهایت است که داده‌ها را به‌صورت دستی از API مدیریت
-        می‌کند:
+        این کامپوننت یک Autocomplete با جستجوی لحظه‌ای و اسکرول بینهایت است که همه منطق داده و درخواست‌ها را به‌صورت
+        دستی مدیریت می‌کند:
       </Typography>
 
       <List dense>
+        {/* 1 — مدیریت state و درخواست‌ها */}
         <ListItem>
           <ListItemText
-            primary="مدیریت دستی state و درخواست‌ها"
-            secondary="برای نگهداری آیتم‌ها، وضعیت بارگذاری، خطا، صفحه فعلی و کش نتایج از useState و useRef استفاده شده و AbortController برای کنسل کردن درخواست قبلی به‌کار رفته است."
+            primary="مدیریت state و درخواست‌ها"
+            secondary="تمام مسئولیت‌ها از جمله نگهداری داده‌ها، وضعیت بارگذاری، خطا، صفحه فعلی و مدیریت AbortController برای لغو درخواست قبلی، به‌صورت دستی با useState و useRef انجام شده است."
           />
         </ListItem>
 
+        {/* 2 — debounce */}
         <ListItem>
           <ListItemText
-            primary="جستجوی real-time با debounce"
-            secondary="تغییرات input با onInputChange کنترل می‌شود و با استفاده از debounce و QUERY_DEBOUNCE_WAIT_TIME، درخواست‌ها به شکل بهینه به API ارسال می‌شوند."
+            primary="جستجوی بهینه با debounce"
+            secondary="ورودی کاربر با debounce کنترل می‌شود تا تنها پس از مکث کاربر، درخواست جدید ارسال شود؛ این کار با debounce و مقدار QUERY_DEBOUNCE_WAIT_TIME انجام شده است."
           />
         </ListItem>
 
+        {/* 3 — infinite scroll */}
         <ListItem>
           <ListItemText
-            primary="اسکرول بینهایت و lazy loading"
-            secondary="با گوش‌دادن به اسکرول لیست (ListboxProps.onScroll) و محاسبه فاصله تا انتهای لیست، در صورت رسیدن به آستانه INFINITE_QUERY_THRESHOLD صفحه بعدی لود می‌شود."
+            primary="اسکرول بینهایت (Infinite Scroll)"
+            secondary="روی اسکرول لیست گوش داده می‌شود و با محاسبه فاصله تا انتهای لیست، هنگام رسیدن به آستانه INFINITE_QUERY_THRESHOLD صفحه بعدی به‌صورت lazy لود می‌شود."
           />
         </ListItem>
 
+        {/* 4 — مدیریت و نگهداری نتایج */}
         <ListItem>
           <ListItemText
-            primary="کش نتایج بر اساس query"
-            secondary="برای هر عبارت جستجو یک ورودی در cacheRef نگهداری می‌شود تا در صورت تکرار همان query، به‌جای درخواست جدید، نتایج از کش خوانده شوند."
+            primary="مدیریت و نگهداری نتایج"
+            secondary="یک کش داخلی (cacheRef) بر اساس query نگهداری می‌شود تا هنگام تکرار یک عبارت جستجو، نیاز به درخواست مجدد نباشد و داده از کش خوانده شود."
           />
         </ListItem>
 
+        {/* 5 — مدیریت خطا */}
         <ListItem>
           <ListItemText
-            primary="مدیریت خطا و وضعیت‌های بدون نتیجه"
-            secondary="در صورت خطای API، پیام خطا در helperText فیلد نمایش داده می‌شود و زمانی که لیست خالی باشد، متن «هیچ نتیجه‌ای یافت نشد» در Autocomplete نمایش داده می‌شود."
+            primary="مدیریت خطا و وضعیت‌ها"
+            secondary="در هنگام خطا، دکمه تلاش مجدد در dropdown نمایش داده می‌شود و برای بارگذاری صفحه بعد نیز خطا در انتهای لیست همراه با امکان retry نمایش داده می‌شود."
           />
         </ListItem>
 
+        {/* 6 — UX */}
         <ListItem>
           <ListItemText
-            primary="بهبود UX در لیست نتایج"
-            secondary="آخرین آیتم لیست، در صورت وجود صفحه بعد، یک spinner کوچک زیر خودش نمایش می‌دهد تا وضعیت بارگذاری بیشتر برای کاربر مشخص باشد."
+            primary="بهبود تجربه کاربری در لیست نتایج"
+            secondary="برای نمایش بهتر روند لود، زیر آخرین آیتم یک spinner نمایش داده می‌شود و زمانی که خطا رخ بدهد، دکمه retry جایگزین آن می‌شود."
           />
         </ListItem>
       </List>

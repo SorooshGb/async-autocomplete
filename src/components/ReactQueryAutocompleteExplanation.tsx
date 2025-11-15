@@ -8,49 +8,55 @@ export function ReactQueryAutocompleteExplanation() {
       </Typography>
 
       <Typography variant="body2" color="text.secondary" gutterBottom>
-        در این نسخه از Autocomplete، مدیریت داده‌ها و pagination با استفاده از React Query انجام شده است:
+        در این نسخه، مدیریت داده‌ها، کش، وضعیت‌ها، و pagination به‌صورت کامل توسط React Query انجام می‌شود:
       </Typography>
 
       <List dense>
+        {/* 1 — مدیریت state و درخواست‌ها */}
         <ListItem>
           <ListItemText
-            primary="استفاده از useInfiniteQuery برای pagination"
-            secondary="دریافت لیست فیلم‌ها به صورت صفحه‌ای با useInfiniteMoviesQuery انجام می‌شود و fetchNextPage و hasNextPage مدیریت لود صفحه‌های بعدی را بر عهده دارند."
+            primary="مدیریت state و درخواست‌ها"
+            secondary="دریافت داده‌ها، وضعیت بارگذاری، وضعیت صفحه بعد، خطا و توابع fetchNextPage و refetch از useInfiniteQuery تأمین می‌شود و نیاز به مدیریت دستی وضعیت‌ها وجود ندارد."
           />
         </ListItem>
 
+        {/* 2 — debounce */}
         <ListItem>
           <ListItemText
-            primary="جستجوی بهینه با debounce روی ورودی"
-            secondary="مقدار input با useState کنترل می‌شود و با useDebounce فقط بعد از مکث کاربر، درخواست جدید به API ارسال شود."
+            primary="جستجوی بهینه با debounce"
+            secondary="با استفاده از useDebounce، مقدار input تنها پس از مکث کاربر باعث اجرای درخواست جدید می‌شود و از تعداد درخواست‌ها کاسته می‌شود."
           />
         </ListItem>
 
+        {/* 3 — infinite scroll */}
         <ListItem>
           <ListItemText
-            primary="اسکرول بینهایت روی لیست MUI"
-            secondary="با استفاده از ListboxProps.onScroll و محاسبه فاصله تا انتهای لیست (INFINITE_QUERY_THRESHOLD)، در صورت نزدیک شدن اسکرول به انتها، fetchNextPage فراخوانی می‌شود."
+            primary="اسکرول بینهایت (Infinite Scroll)"
+            secondary="با گوش‌دادن به اسکرول لیست و محاسبه فاصله تا انتهای آن، در صورت وجود صفحه بعد، تابع fetchNextPage از React Query فراخوانی می‌شود."
           />
         </ListItem>
 
+        {/* 4 — مدیریت و نگهداری نتایج */}
         <ListItem>
           <ListItemText
-            primary="تجمیع صفحات در یک آرایه options"
-            secondary="تمام صفحات دریافت‌شده با data.pages.flat() در یک آرایه options ادغام شده و به Autocomplete پاس داده می‌شوند تا لیست نتایج یکپارچه نمایش داده شود."
+            primary="مدیریت و نگهداری نتایج"
+            secondary="React Query تمام صفحات را در cache نگه می‌دارد و data.pages.flat به‌صورت خودکار یک لیست واحد از همه صفحات فراهم می‌کند."
           />
         </ListItem>
 
+        {/* 5 — مدیریت خطا */}
         <ListItem>
           <ListItemText
-            primary="مدیریت خطا و وضعیت بارگذاری"
-            secondary="React Query وضعیت isFetching و isError و error را در اختیار می‌گذارد؛ از این مقادیر برای نمایش spinner، متن «در حال بارگذاری» و نمایش پیام خطا در helperText فیلد استفاده شده است."
+            primary="مدیریت خطا و وضعیت‌ها"
+            secondary="React Query وضعیت‌های isFetching و isError و error را فراهم می‌کند و بر اساس آن‌ها spinner، پیام خطا، و دکمه تلاش مجدد در dropdown نمایش داده می‌شود."
           />
         </ListItem>
 
+        {/* 6 — UX */}
         <ListItem>
           <ListItemText
-            primary="بهبود UX با نمایش spinner زیر آخرین آیتم"
-            secondary="در صورت وجود صفحه بعدی، هنگام رسیدن به انتهای لیست یک CircularProgress کوچک زیر آخرین آیتم نمایش داده می‌شود تا روند بارگذاری آیتم‌های بعدی برای کاربر قابل‌درک باشد."
+            primary="بهبود تجربه کاربری در لیست نتایج"
+            secondary="اگر صفحه بعدی وجود داشته باشد، زیر آخرین آیتم، spinner نمایش داده می‌شود و در صورت وقوع خطا، دکمه retry جایگزین آن می‌شود."
           />
         </ListItem>
       </List>
