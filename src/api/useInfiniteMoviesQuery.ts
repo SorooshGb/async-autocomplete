@@ -11,5 +11,6 @@ export function useInfiniteMoviesQuery({ query, enabled }: { query: string; enab
       lastPage.length === ITEMS_PER_PAGE ? lastPageParam + 1 : undefined,
     enabled,
     staleTime: Infinity,
+    retry: 1,
   });
 }

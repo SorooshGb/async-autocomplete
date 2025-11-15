@@ -12,10 +12,10 @@ export type MoviesOption = z.infer<typeof moviesSchema>[number];
 const MOVIES_ENDPOINT = 'http://localhost:3000/top100Films';
 
 function getError(status: number): string {
-  if (status >= 500) return 'Server error';
-  if (status === 404) return 'Not found';
-  if (status === 400) return 'Bad request';
-  return 'Request failed';
+  if (status >= 500) return 'خطای سرور';
+  if (status === 404) return 'یافت نشد';
+  if (status === 400) return 'درخواست نامعتبر';
+  return 'خطا در انجام درخواست';
 }
 
 // for manual implementation
@@ -42,7 +42,7 @@ export async function fetchMovies({
 
     const parsed = moviesSchema.safeParse(data);
     if (!parsed.success) {
-      return { error: true, message: 'Invalid response from server' };
+      return { error: true, message: 'پاسخ نامعتبر از سرور' };
     }
 
     return { error: false, data: parsed.data };
@@ -50,7 +50,7 @@ export async function fetchMovies({
     if (abortSignal?.aborted) {
       return { error: true, message: 'aborted' };
     }
-    return { error: true, message: 'Network error' };
+    return { error: true, message: 'خطا در انجام درخواست' };
   }
 }
 
@@ -69,13 +69,15 @@ export async function fetchMoviesStrict({
     { signal }
   );
 
+  // throw new Error('پاسخ نامعتبر از سمت سرور');
+
   if (!res.ok) {
     throw new Error(getError(res.status));
   }
 
   const data = await res.json();
   const parsed = moviesSchema.safeParse(data);
-  if (!parsed.success) throw new Error('Invalid response from server');
+  if (!parsed.success) throw new Error('پاسخ نامعتبر از سرور');
 
   return parsed.data;
 }
