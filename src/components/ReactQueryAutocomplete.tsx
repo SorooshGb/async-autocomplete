@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
-import { Box, Button, CircularProgress, debounce, Divider, Stack, Typography } from '@mui/material';
+import { Fragment, useMemo, useState } from 'react';
+import { Box, Button, CircularProgress, Divider, Stack, Typography } from '@mui/material';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
 import { SpinnerWithText } from './SpinnerWithText';
@@ -8,12 +8,7 @@ import useDebounce from '@/hooks/useDebounce';
 import { INFINITE_QUERY_THRESHOLD, QUERY_DEBOUNCE_WAIT_TIME } from '@/config';
 import { MoviesOption } from '@/api/api';
 import { useInfiniteMoviesQuery } from '@/api/useInfiniteMoviesQuery';
-
-type ScrollMetrics = {
-  scrollTop: number;
-  scrollHeight: number;
-  clientHeight: number;
-};
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 
 export function ReactQueryAutocomplete() {
   const [inputValue, setInputValue] = useState('');
@@ -35,17 +30,14 @@ export function ReactQueryAutocomplete() {
     debouncedFetchNextPageOnScroll(event.currentTarget);
   }
 
-  const debouncedFetchNextPageOnScroll = useMemo(() => {
-    return debounce((sm: ScrollMetrics) => {
-      const distanceFromBottom = sm.scrollHeight - (sm.scrollTop + sm.clientHeight);
+  const debouncedFetchNextPageOnScroll = useDebouncedCallback((el: HTMLElement) => {
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
 
-      if (distanceFromBottom < INFINITE_QUERY_THRESHOLD) {
-        fetchNextPage();
-      }
-    }, 300);
-  }, [fetchNextPage]);
-
-  useEffect(() => () => debouncedFetchNextPageOnScroll.clear(), [debouncedFetchNextPageOnScroll]);
+    if (distanceFromBottom < INFINITE_QUERY_THRESHOLD) {
+      fetchNextPage();
+    }
+  }, 300);
 
   return (
     <Stack gap={6}>

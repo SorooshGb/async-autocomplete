@@ -1,12 +1,12 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Button, CircularProgress, Divider, Stack, Typography } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
-import { debounce } from '@mui/material/utils';
 import { SpinnerWithText } from './SpinnerWithText';
 import { ManualAutocompleteExplanation } from './ManualAutocompleteExplanation';
 import { INFINITE_QUERY_THRESHOLD, ITEMS_PER_PAGE, QUERY_DEBOUNCE_WAIT_TIME } from '@/config';
 import { fetchMovies, MoviesOption } from '@/api/api';
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 
 type StartRequestOptions = {
   replaceOptions?: boolean;
@@ -67,10 +67,19 @@ export function ManualAutocomplete() {
     setLoading(false);
   }, []);
 
-  const debouncedFetchMovies = useMemo(
-    () => debounce(async (query: string) => fetchPaginatedMovies(query, 1), QUERY_DEBOUNCE_WAIT_TIME),
-    [fetchPaginatedMovies]
+  const debouncedFetchMovies = useDebouncedCallback(
+    (query: string) => fetchPaginatedMovies(query, 1),
+    QUERY_DEBOUNCE_WAIT_TIME
   );
+
+  const debouncedFetchNextPageOnScroll = useDebouncedCallback((query: string, el: HTMLElement) => {
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+
+    if (distanceFromBottom < INFINITE_QUERY_THRESHOLD) {
+      startRequest({ type: 'infiniteScroll', query });
+    }
+  }, 300);
 
   const startRequest = useCallback(
     ({ type, query, replaceOptions = false }: StartRequestOptions) => {
@@ -94,19 +103,6 @@ export function ManualAutocomplete() {
       }
     },
     [fetchPaginatedMovies, debouncedFetchMovies]
-  );
-
-  const debouncedFetchNextPageOnScroll = useMemo(
-    () =>
-      debounce((query: string, el: HTMLElement) => {
-        const { scrollTop, scrollHeight, clientHeight } = el;
-        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-
-        if (distanceFromBottom < INFINITE_QUERY_THRESHOLD) {
-          startRequest({ type: 'infiniteScroll', query });
-        }
-      }, 300),
-    [startRequest]
   );
 
   function handleListboxScroll(event: React.UIEvent<HTMLElement>) {
@@ -134,15 +130,6 @@ export function ManualAutocomplete() {
   function onDropdownOpen() {
     startRequest({ type: 'firstPage', query: inputValue });
   }
-
-  // Cleanup
-  useEffect(() => {
-    return () => debouncedFetchMovies.clear();
-  }, [debouncedFetchMovies]);
-
-  useEffect(() => {
-    return () => debouncedFetchNextPageOnScroll.clear();
-  }, [debouncedFetchNextPageOnScroll]);
 
   useEffect(() => {
     return () => abortControllerRef.current?.abort();
