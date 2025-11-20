@@ -33,7 +33,7 @@ export function ManualAutocompleteExplanation() {
         <ListItem>
           <ListItemText
             primary="اسکرول بینهایت (Infinite Scroll)"
-            secondary="روی اسکرول لیست گوش داده می‌شود و با محاسبه فاصله تا انتهای لیست، هنگام رسیدن به آستانه INFINITE_QUERY_THRESHOLD صفحه بعدی به‌صورت lazy لود می‌شود."
+            secondary="روی اسکرول لیست گوش داده می‌شود و با محاسبه فاصله تا انتهای لیست، هنگام رسیدن به آستانه SCROLL_BOTTOM_THRESHOLD_PX صفحه بعدی به‌صورت lazy لود می‌شود."
           />
         </ListItem>
 

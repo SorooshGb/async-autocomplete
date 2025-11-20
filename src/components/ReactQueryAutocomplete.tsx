@@ -1,32 +1,38 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Box, Button, CircularProgress, Divider, Stack, Typography } from '@mui/material';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
 import { SpinnerWithText } from './SpinnerWithText';
 import { ReactQueryAutocompleteExplanation } from './ReactQueryAutocompleteExplanation';
-import useDebounce from '@/hooks/useDebounce';
-import { INFINITE_QUERY_THRESHOLD, QUERY_DEBOUNCE_WAIT_TIME } from '@/config';
+import { SCROLL_BOTTOM_THRESHOLD_PX, QUERY_DEBOUNCE_WAIT_TIME } from '@/lib/constants';
 import { MoviesOption } from '@/api/api';
 import { useInfiniteMoviesQuery } from '@/api/useInfiniteMoviesQuery';
-import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
+import { useDebouncedCallback } from '@/hooks/debounce/useDebouncedCallback';
+import { useDebouncedState } from '@/hooks/debounce/useDebouncedState';
+import { getErrorMessage } from '@/lib/utils';
 
 export function ReactQueryAutocomplete() {
-  const [inputValue, setInputValue] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [debouncedInputValue, debounceInputValue] = useDebouncedState('', QUERY_DEBOUNCE_WAIT_TIME);
 
-  const debouncedInputValue = useDebounce(inputValue, QUERY_DEBOUNCE_WAIT_TIME);
-  const { data, isFetching, isError, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteMoviesQuery({
-      query: debouncedInputValue,
-      enabled: isOpen,
-    });
+  const {
+    data: options,
+    isFetching,
+    isError,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteMoviesQuery({
+    query: debouncedInputValue,
+    enabled: isOpen,
+  });
 
-  const options = useMemo(() => data?.pages.flat() ?? [], [data]);
-  const errorMessage = isError && error instanceof Error ? error.message : isError ? 'خطایی رخ داده است' : '';
+  const errorMessage = error ? getErrorMessage(error) : null;
 
   function handleListboxScroll(event: React.UIEvent<HTMLElement>) {
     if (isFetchingNextPage) return;
-
     debouncedFetchNextPageOnScroll(event.currentTarget);
   }
 
@@ -34,7 +40,7 @@ export function ReactQueryAutocomplete() {
     const { scrollTop, scrollHeight, clientHeight } = el;
     const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
 
-    if (distanceFromBottom < INFINITE_QUERY_THRESHOLD) {
+    if (distanceFromBottom < SCROLL_BOTTOM_THRESHOLD_PX) {
       fetchNextPage();
     }
   }, 300);
@@ -46,17 +52,16 @@ export function ReactQueryAutocomplete() {
         clearOnBlur={false}
         filterOptions={x => x}
         sx={{ width: 300 }}
-        options={options}
+        options={options ?? []}
         loading={isFetching}
-        inputValue={inputValue}
-        onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
+        onInputChange={(_, newInputValue) => debounceInputValue(newInputValue)}
         onOpen={() => setIsOpen(true)}
         onClose={() => setIsOpen(false)}
         noOptionsText={getNoOptionsText(errorMessage, refetch)}
         loadingText={<AutocompleteLoadingText />}
         ListboxProps={{ onScroll: handleListboxScroll, style: { direction: 'ltr', overscrollBehavior: 'contain' } }}
         renderInput={params => <TextField {...params} label="فیلم‌ها" error={!!errorMessage} />}
-        renderOption={makeRenderOption(options, hasNextPage, isError, fetchNextPage)}
+        renderOption={makeRenderOption(options || [], hasNextPage, isError, fetchNextPage)}
       />
       <Divider />
       <ReactQueryAutocompleteExplanation />
@@ -72,13 +77,13 @@ function AutocompleteLoadingText() {
   );
 }
 
-function getNoOptionsText(errorMessage: string, refetch: () => void) {
-  return errorMessage ? (
+function getNoOptionsText(errorMessage: string | null, refetch: () => void) {
+  return errorMessage == null ? (
+    <Typography>هیچ نتیجه‌ای یافت نشد</Typography>
+  ) : (
     <Button onClick={() => refetch()} size="small" color="error">
       {errorMessage}. برای تلاش مجدد کلیک کنید
     </Button>
-  ) : (
-    <Typography>هیچ نتیجه‌ای یافت نشد</Typography>
   );
 }
 

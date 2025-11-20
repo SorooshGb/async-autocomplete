@@ -1,5 +1,5 @@
 import { fetchMoviesStrict } from './api';
-import { ITEMS_PER_PAGE } from '../config';
+import { ITEMS_PER_PAGE } from '../lib/constants';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 export function useInfiniteMoviesQuery({ query, enabled }: { query: string; enabled: boolean }) {
@@ -12,5 +12,6 @@ export function useInfiniteMoviesQuery({ query, enabled }: { query: string; enab
     enabled,
     staleTime: Infinity,
     retry: 1,
+    select: data => data.pages.flat(),
   });
 }

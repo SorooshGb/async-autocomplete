@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useCallbackRef } from './useCallbackRef';
+import { useCallbackRef } from '@/hooks/useCallbackRef';
 
 export function useDebouncedCallback<T extends (...args: never[]) => unknown>(callback: T, delay: number) {
   const handleCallback = useCallbackRef(callback);
