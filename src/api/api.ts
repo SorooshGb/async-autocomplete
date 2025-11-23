@@ -1,4 +1,5 @@
-import { ITEMS_PER_PAGE } from '../config';
+import { getStatusCodeError } from '@/lib/utils';
+import { ITEMS_PER_PAGE } from '../lib/constants';
 import z from 'zod';
 
 const moviesSchema = z.array(
@@ -10,13 +11,6 @@ const moviesSchema = z.array(
 export type MoviesOption = z.infer<typeof moviesSchema>[number];
 
 const MOVIES_ENDPOINT = 'http://localhost:3000/top100Films';
-
-function getError(status: number): string {
-  if (status >= 500) return 'خطای سرور';
-  if (status === 404) return 'یافت نشد';
-  if (status === 400) return 'درخواست نامعتبر';
-  return 'خطا در انجام درخواست';
-}
 
 // for manual implementation
 export async function fetchMovies({
@@ -37,7 +31,7 @@ export async function fetchMovies({
     // throw new Error('پاسخ نامعتبر از سمت سرور');
 
     if (!res.ok) {
-      return { error: true, message: getError(res.status) };
+      return { error: true, message: getStatusCodeError(res.status) };
     }
 
     const data = await res.json();
@@ -74,7 +68,7 @@ export async function fetchMoviesStrict({
   // throw new Error('پاسخ نامعتبر از سمت سرور');
 
   if (!res.ok) {
-    throw new Error(getError(res.status));
+    throw new Error(getStatusCodeError(res.status));
   }
 
   const data = await res.json();

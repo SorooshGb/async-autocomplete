@@ -24,7 +24,7 @@ export function ReactQueryAutocompleteExplanation() {
         <ListItem>
           <ListItemText
             primary="جستجوی بهینه با debounce"
-            secondary="با استفاده از useDebounce، مقدار input تنها پس از مکث کاربر باعث اجرای درخواست جدید می‌شود و از تعداد درخواست‌ها کاسته می‌شود."
+            secondary="با استفاده از useDebouncedState، مقدار input تنها پس از مکث کاربر باعث اجرای درخواست جدید می‌شود و از تعداد درخواست‌ها کاسته می‌شود."
           />
         </ListItem>
 

@@ -1,18 +1,18 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Box, Button, CircularProgress, Divider, Stack, Typography } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import { SpinnerWithText } from './SpinnerWithText';
 import { ManualAutocompleteExplanation } from './ManualAutocompleteExplanation';
-import { INFINITE_QUERY_THRESHOLD, ITEMS_PER_PAGE, QUERY_DEBOUNCE_WAIT_TIME } from '@/config';
+import { SCROLL_BOTTOM_THRESHOLD_PX, ITEMS_PER_PAGE, QUERY_DEBOUNCE_WAIT_TIME } from '@/lib/constants';
 import { fetchMovies, MoviesOption } from '@/api/api';
-import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
+import { useDebouncedCallback } from '@/hooks/debounce/useDebouncedCallback';
 
-type StartRequestOptions = {
-  replaceOptions?: boolean;
-  type: 'firstPage' | 'infiniteScroll' | 'debouncedInput';
-  query: string;
-};
+type StartRequestOptions =
+  | {
+      type: 'firstPage' | 'infiniteScroll';
+    }
+  | { type: 'debouncedInput'; query: string };
 
 type CacheEntry = {
   options: MoviesOption[];
@@ -30,18 +30,25 @@ export function ManualAutocomplete() {
   const cacheRef = useRef<Map<string, CacheEntry>>(new Map());
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  function getPageForQuery(query: string): number {
+  function getCurrentPageNumber(query: string): number {
     const entry = cacheRef.current.get(query);
     if (!entry) return 1;
 
     return Math.ceil(entry.options.length / ITEMS_PER_PAGE) || 1;
   }
 
-  const fetchPaginatedMovies = useCallback(async (query: string, page: number) => {
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
+  function applyCache(query: string): boolean {
+    const entry = cacheRef.current.get(query);
+    if (!entry) return false;
 
-    const res = await fetchMovies({ page, query, abortSignal: controller.signal });
+    setOptions(entry.options);
+    setHasMorePages(entry.hasMorePages);
+
+    return true;
+  }
+
+  async function getMovies(query: string, page: number) {
+    const res = await fetchMovies({ page, query, abortSignal: abortControllerRef.current?.signal });
     if ('message' in res && res.message === 'aborted') return;
 
     if (res.error) {
@@ -65,70 +72,57 @@ export function ManualAutocomplete() {
     });
 
     setLoading(false);
-  }, []);
+  }
 
-  const debouncedFetchMovies = useDebouncedCallback(
-    (query: string) => fetchPaginatedMovies(query, 1),
-    QUERY_DEBOUNCE_WAIT_TIME
-  );
+  function startRequest(options: StartRequestOptions) {
+    const { type } = options;
+    const query = type === 'debouncedInput' ? options.query : inputValue;
 
-  const debouncedFetchNextPageOnScroll = useDebouncedCallback((query: string, el: HTMLElement) => {
+    abortControllerRef.current?.abort();
+    setError('');
+
+    if ((type === 'debouncedInput' || type === 'firstPage') && applyCache(query)) {
+      return;
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    setLoading(true);
+
+    if (type === 'debouncedInput') {
+      setOptions([]);
+      debouncedGetMovies(query);
+    } else if (type === 'firstPage') {
+      getMovies(query, 1);
+    } else if (type === 'infiniteScroll') {
+      const nextPage = getCurrentPageNumber(query) + 1;
+      getMovies(query, nextPage);
+    }
+  }
+
+  const debouncedGetMovies = useDebouncedCallback((query: string) => getMovies(query, 1), QUERY_DEBOUNCE_WAIT_TIME);
+
+  const debouncedGetNextPage = useDebouncedCallback((el: HTMLElement) => {
     const { scrollTop, scrollHeight, clientHeight } = el;
     const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
 
-    if (distanceFromBottom < INFINITE_QUERY_THRESHOLD) {
-      startRequest({ type: 'infiniteScroll', query });
+    if (distanceFromBottom < SCROLL_BOTTOM_THRESHOLD_PX) {
+      startRequest({ type: 'infiniteScroll' });
     }
   }, 300);
 
-  const startRequest = useCallback(
-    ({ type, query, replaceOptions = false }: StartRequestOptions) => {
-      abortControllerRef.current?.abort();
-      setError('');
-
-      if ((type === 'debouncedInput' || type === 'firstPage') && applyCache(query)) {
-        return;
-      }
-
-      setLoading(true);
-      if (replaceOptions) setOptions([]);
-
-      if (type === 'debouncedInput') {
-        debouncedFetchMovies(query);
-      } else if (type === 'firstPage') {
-        fetchPaginatedMovies(query, 1);
-      } else if (type === 'infiniteScroll') {
-        const nextPage = getPageForQuery(query) + 1;
-        fetchPaginatedMovies(query, nextPage);
-      }
-    },
-    [fetchPaginatedMovies, debouncedFetchMovies]
-  );
-
   function handleListboxScroll(event: React.UIEvent<HTMLElement>) {
     if (loading || !hasMorePages) return;
-    debouncedFetchNextPageOnScroll(inputValue, event.currentTarget);
-  }
-
-  function applyCache(query: string): boolean {
-    const entry = cacheRef.current.get(query);
-    if (!entry) return false;
-
-    setOptions(entry.options);
-    setHasMorePages(entry.hasMorePages);
-
-    setLoading(false);
-    setError('');
-    return true;
+    debouncedGetNextPage(event.currentTarget);
   }
 
   function onInputChange(newInputValue: string) {
     setInputValue(newInputValue);
-    startRequest({ type: 'debouncedInput', query: newInputValue, replaceOptions: true });
+    startRequest({ type: 'debouncedInput', query: newInputValue });
   }
 
   function onDropdownOpen() {
-    startRequest({ type: 'firstPage', query: inputValue });
+    startRequest({ type: 'firstPage' });
   }
 
   useEffect(() => {
@@ -147,13 +141,11 @@ export function ManualAutocomplete() {
         onOpen={onDropdownOpen}
         inputValue={inputValue}
         onInputChange={(_, v) => onInputChange(v)}
-        noOptionsText={getNoOptionsText(error, () => startRequest({ type: 'firstPage', query: inputValue }))}
+        noOptionsText={getNoOptionsText(error, () => startRequest({ type: 'firstPage' }))}
         loadingText={<AutocompleteLoadingText />}
         ListboxProps={{ onScroll: handleListboxScroll, style: { direction: 'ltr', overscrollBehavior: 'contain' } }}
         renderInput={params => <TextField {...params} label="فیلم‌ها" error={!!error} />}
-        renderOption={makeRenderOption(options, hasMorePages, !!error, () =>
-          startRequest({ type: 'infiniteScroll', query: inputValue })
-        )}
+        renderOption={makeRenderOption(options, hasMorePages, !!error, () => startRequest({ type: 'infiniteScroll' }))}
       />
       <Divider />
       <ManualAutocompleteExplanation />

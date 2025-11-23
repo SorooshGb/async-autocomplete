@@ -1,3 +1,3 @@
-export const INFINITE_QUERY_THRESHOLD = 150;
+export const SCROLL_BOTTOM_THRESHOLD_PX = 150;
 export const ITEMS_PER_PAGE = 20;
 export const QUERY_DEBOUNCE_WAIT_TIME = 300;
