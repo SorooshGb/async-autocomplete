@@ -1,6 +1,6 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, CircularProgress, Divider, Stack, Typography } from '@mui/material';
-import Autocomplete from '@mui/material/Autocomplete';
+import Autocomplete, { type AutocompleteInputChangeReason } from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import { SpinnerWithText } from './SpinnerWithText';
 import { ManualAutocompleteExplanation } from './ManualAutocompleteExplanation';
@@ -20,11 +20,12 @@ type CacheEntry = {
 };
 
 export function ManualAutocomplete() {
-  const [options, setOptions] = useState<MoviesOption[]>([]);
+  const [movies, setMovies] = useState<MoviesOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const [inputValue, setInputValue] = useState('');
+  const [selectedOption, setSelectedOption] = useState<MoviesOption | null>(null);
+  const [queryInput, setQueryInput] = useState('');
   const [hasMorePages, setHasMorePages] = useState(true);
 
   const cacheRef = useRef<Map<string, CacheEntry>>(new Map());
@@ -41,14 +42,14 @@ export function ManualAutocomplete() {
     const entry = cacheRef.current.get(query);
     if (!entry) return false;
 
-    setOptions(entry.options);
+    setMovies(entry.options);
     setHasMorePages(entry.hasMorePages);
 
     return true;
   }
 
   async function getMovies(query: string, page: number) {
-    const res = await fetchMovies({ page, query, abortSignal: abortControllerRef.current?.signal });
+    const res = await fetchMovies({ page, query: query.trim(), abortSignal: abortControllerRef.current?.signal });
     if ('message' in res && res.message === 'aborted') return;
 
     if (res.error) {
@@ -58,11 +59,12 @@ export function ManualAutocomplete() {
     }
 
     const prev = cacheRef.current.get(query);
+
     const updatedOptions = page === 1 ? res.data : [...(prev?.options || []), ...res.data];
 
     const nextHasMorePages = res.data.length === ITEMS_PER_PAGE;
 
-    setOptions(updatedOptions);
+    setMovies(updatedOptions);
     setHasMorePages(nextHasMorePages);
 
     // Update cache
@@ -76,7 +78,7 @@ export function ManualAutocomplete() {
 
   function startRequest(options: StartRequestOptions) {
     const { type } = options;
-    const query = type === 'debouncedInput' ? options.query : inputValue;
+    const query = type === 'debouncedInput' ? options.query : queryInput;
 
     abortControllerRef.current?.abort();
     setError('');
@@ -90,7 +92,8 @@ export function ManualAutocomplete() {
     setLoading(true);
 
     if (type === 'debouncedInput') {
-      setOptions([]);
+      setMovies([]);
+      setSelectedOption(null);
       debouncedGetMovies(query);
     } else if (type === 'firstPage') {
       getMovies(query, 1);
@@ -116,14 +119,24 @@ export function ManualAutocomplete() {
     debouncedGetNextPage(event.currentTarget);
   }
 
-  function onInputChange(newInputValue: string) {
-    setInputValue(newInputValue);
+  function onInputChange(newInputValue: string, reason: AutocompleteInputChangeReason) {
+    // when a selection is made:
+    // - keep the queryInput unchanged
+    // - keep the last queried list
+    if (reason === 'reset') return;
+
+    setQueryInput(newInputValue);
     startRequest({ type: 'debouncedInput', query: newInputValue });
   }
 
-  function onDropdownOpen() {
-    startRequest({ type: 'firstPage' });
-  }
+  const options = useMemo(() => {
+    if (selectedOption == null) return movies;
+
+    const cleanOptions = movies.filter(o => o.id !== selectedOption.id);
+    return [selectedOption, ...cleanOptions];
+  }, [movies, selectedOption]);
+
+  const onDropdownOpen = () => startRequest({ type: 'firstPage' });
 
   useEffect(() => {
     return () => abortControllerRef.current?.abort();
@@ -135,12 +148,15 @@ export function ManualAutocomplete() {
         disablePortal
         clearOnBlur={false}
         sx={{ width: 300 }}
-        filterOptions={x => x}
         options={options}
+        isOptionEqualToValue={(o, v) => o.id === v.id}
+        value={selectedOption}
+        onInputChange={(_, v, reason) => onInputChange(v, reason)}
+        onChange={(_, v) => setSelectedOption(v)}
+        filterOptions={x => x}
+        filterSelectedOptions
         loading={loading}
         onOpen={onDropdownOpen}
-        inputValue={inputValue}
-        onInputChange={(_, v) => onInputChange(v)}
         noOptionsText={getNoOptionsText(error, () => startRequest({ type: 'firstPage' }))}
         loadingText={<AutocompleteLoadingText />}
         ListboxProps={{ onScroll: handleListboxScroll, style: { direction: 'ltr', overscrollBehavior: 'contain' } }}
@@ -155,8 +171,8 @@ export function ManualAutocomplete() {
 
 function AutocompleteLoadingText() {
   return (
-    <SpinnerWithText>
-      <Typography>در حال بارگذاری</Typography>
+    <SpinnerWithText size={15}>
+      <Typography variant="body2">در حال بارگذاری</Typography>
     </SpinnerWithText>
   );
 }
@@ -206,7 +222,7 @@ function makeRenderOption(
               خطا در بارگذاری، برای تلاش مجدد کلیک کنید
             </Button>
           ) : (
-            hasNextPage && <CircularProgress size={20} />
+            hasNextPage && <CircularProgress size={15} />
           )}
         </Box>
       </Fragment>

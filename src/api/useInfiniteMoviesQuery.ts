@@ -9,8 +9,8 @@ export function useInfiniteMoviesQuery({ query, enabled }: { query: string; enab
     initialPageParam: 1,
     getNextPageParam: (lastPage, _allPages, lastPageParam) =>
       lastPage.length === ITEMS_PER_PAGE ? lastPageParam + 1 : undefined,
-    enabled,
     staleTime: Infinity,
+    enabled,
     retry: 1,
     select: data => data.pages.flat(),
   });
