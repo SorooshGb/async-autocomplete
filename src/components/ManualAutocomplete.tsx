@@ -49,7 +49,7 @@ export function ManualAutocomplete() {
   }
 
   async function getMovies(query: string, page: number) {
-    const res = await fetchMovies({ page, query: query.trim(), abortSignal: abortControllerRef.current?.signal });
+    const res = await fetchMovies({ page, query, abortSignal: abortControllerRef.current?.signal });
     if ('message' in res && res.message === 'aborted') return;
 
     if (res.error) {
@@ -78,7 +78,8 @@ export function ManualAutocomplete() {
 
   function startRequest(options: StartRequestOptions) {
     const { type } = options;
-    const query = type === 'debouncedInput' ? options.query : queryInput;
+    const rawQuery = type === 'debouncedInput' ? options.query : queryInput;
+    const query = rawQuery.trim();
 
     abortControllerRef.current?.abort();
     setError('');

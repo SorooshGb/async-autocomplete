@@ -17,7 +17,7 @@ export function ReactQueryAutocomplete() {
 
   const { data, isFetching, isError, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteMoviesQuery({
-      query: debouncedInputValue,
+      query: debouncedInputValue.trim(),
       enabled,
     });
 
