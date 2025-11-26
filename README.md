@@ -1,76 +1,35 @@
-## 🚀 اجرای پروژه
+1. **Install Dependencies**
 
-برای اجرای پروژه به صورت محلی، مراحل زیر را دنبال کنید:
+   ```bash
+   npm install
+   ```
 
-### 1. نصب وابستگی‌ها
+2. **Run JSON Server (API Mock)**
+   This project uses json-server to simulate a backend.
+   A deliberate 1-second delay has been added so you can test scenarios such as:
 
-```bash
-npm install
-```
+   - Data loading states
+   - Request abort behavior when rapidly changing inputs
 
-### 2. اجرای JSON Server (برای API)
+   Run it in a separate terminal:
 
-<div dir="rtl">
+   ```bash
+   npm run server
+   ```
 
-<ul>
-  <li>این پروژه از <strong>json-server</strong> برای شبیه‌سازی بک‌اند استفاده می‌کند.</li>
-  <li>در اسکریپت json-server <strong>عمداً یک delay یک ثانیه‌ای قرار داده‌ام</strong> تا بتوانید حالت‌های زیر را تست کنید:
-    <ul>
-      <li>مشاهده حالت لود شدن داده</li>
-      <li>abort شدن درخواست‌ها هنگام تغییر سریع ورودی</li>
-    </ul>
-  </li>
-</ul>
+3. **Run the Application**
+   In another terminal:
 
-</div>
+   ```bash
+   npm run dev
+   ```
 
-در یک ترمینال جدا اجرا کنید:
+4. **Access the App**
+   ```bash
+   http://localhost:5173
+   ```
 
-```bash
-npm run server
-```
+### Overview of the Two Implementations
 
-### 3. اجرای برنامه
-
-در یک ترمینال دیگر:
-
-```bash
-npm run dev
-```
-
-### 4. دسترسی به برنامه
-
-```
-http://localhost:5173
-```
-
----
-
-## 🗂️ ساختار کلی پروژه
-
-<div dir="rtl">
-
-پس از اجرای برنامه، دو تب در بالای صفحه مشاهده می‌کنید:
-
-### 🔹 تب اول: «بدون لایبرری»
-
-<ul>
-  <li>در این نسخه تمام الزامات تسک <strong>بدون استفاده از لایبرری‌</strong> پیاده‌سازی شده‌اند و فقط از <strong>MUI</strong> برای ساخت UI (مطابق پیش‌نیاز تسک) استفاده شده است.</li>
-  <li>تمام موارد مانند <strong>pagination</strong>، <strong>infinite scroll</strong>، <strong>لغو درخواست‌ها (abort)</strong> و <strong>کش‌کردن نتایج بر اساس query</strong> همگی به‌صورت دستی کنترل شده‌اند.</li>
-</ul>
-
-### 🔹 تب دوم: «React Query»
-
-<ul>
-  <li>در این نسخه از <strong>@tanstack/react-query</strong> برای مدیریت داده‌ها استفاده شده است.</li>
-  <li>React Query مسئولیت:
-    <ul>
-      <li><strong>کش داده‌ها</strong> (cache)</li>
-      <li><strong>pagination</strong> با استفاده از useInfiniteQuery</li>
-      <li><strong>مدیریت وضعیت بارگذاری، خطا، و درخواست‌های هم‌زمان</strong></li>
-    </ul>
-    را بر عهده دارد.
-  </li>
-</ul>
-
-</div>
+- The first tab contains a **fully manual implementation** (pagination, infinite scroll, aborting requests, caching, etc.), without any data-management libraries.
+- The second tab contains an implementation using **React Query**, which handles caching, pagination, loading/error states, and request coordination.
